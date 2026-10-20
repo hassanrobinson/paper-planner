@@ -152,7 +152,7 @@
 </script>
 
 <svelte:head>
-  <title>Teacher Planner — Printable Sheets</title>
+  <title>Paper Planner — Printable Sheets</title>
 </svelte:head>
 
 {#snippet nameDate(key)}

@@ -1,4 +1,4 @@
-# Teacher Planner: project rules
+# Paper Planner: project rules
 
 Printable classroom sheets for students with limited working memory. Clarity and simplicity come first.
 
