@@ -49,12 +49,18 @@
   let mode = $state('sheets');
   let planningPages = $state(Object.fromEntries(PLANNING_PAGES.map((key) => [key, true])));
   let packetDays = $state(Object.fromEntries(PACKET_DAYS.map((d) => [d, true])));
+  // Single sheets can also reprint the Daily page for one specific day.
+  let singleDays = $state(Object.fromEntries(PACKET_DAYS.map((d) => [d, false])));
+  const anyDaily = $derived(selected.daily || PACKET_DAYS.some((d) => singleDays[d]));
   const sheets = $derived(
     (mode === 'planning'
       ? PLANNING_PAGES.filter((key) => planningPages[key]).map((view) => ({ view }))
       : mode === 'daily'
         ? PACKET_DAYS.filter((d) => packetDays[d]).map((day) => ({ view: 'daily', day }))
-        : shown.map((view) => ({ view }))
+        : [
+            ...shown.map((view) => ({ view })),
+            ...PACKET_DAYS.filter((d) => singleDays[d]).map((day) => ({ view: 'daily', day }))
+          ]
     ).map((sheet, i) => ({ ...sheet, id: `${i}-${sheet.view}` }))
   );
   const teacherExamples = {
@@ -248,8 +254,14 @@
         {#each Object.entries(pages) as [key, label]}
           <label class="sheet-choice"><input type="checkbox" bind:checked={selected[key]} />{label}</label>
         {/each}
+        <p class="side-label">Daily Schedule for one day</p>
+        <div class="print-days">
+          {#each PACKET_DAYS as d}
+            <label><input type="checkbox" bind:checked={singleDays[d]} />{d}</label>
+          {/each}
+        </div>
       {/if}
-      {#if mode === 'daily' || (mode === 'sheets' && selected.daily)}
+      {#if mode === 'daily' || (mode === 'sheets' && anyDaily)}
         <div class="schedule-input">
           <label class="side-label" for="base-schedule">Daily schedule</label>
           <textarea id="base-schedule" rows="9" placeholder={"7:30–7:50, Arrival\n7:50–9:20, Math block\n12:30–1:05, {special}"} bind:value={setup.base} onblur={saveSetup} spellcheck="false"></textarea>

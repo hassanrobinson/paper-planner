@@ -29,7 +29,7 @@ Deploy the `dist` folder to any static host. The repo deploys to GitHub Pages au
 - Choose **Planning packet**, **Daily packet**, or **Single sheets**.
 - The Planning packet prints This Week, Reminders and Next Week. These stay in the binder in that order all week.
 - The Daily packet prints one Daily Schedule page for each day, with the day name on the page. Clip them together with today on top. At dismissal, move anything not finished to Reminders and take the page off.
-- Use **Single sheets** to reprint one page.
+- Use **Single sheets** to reprint one page. Pick **Daily Schedule** for a page with the day circles, or pick Mon through Fri to reprint a Daily Schedule with that day printed.
 - Enter the daily schedule and the special for each letter day in the sidebar.
 - Choose **Left edge** or **Right edge** to leave more room for the hole punch on that side.
 - Click **Print / Save PDF**. Choose US Letter portrait, scale **100%**, and turn off browser headers and footers.
