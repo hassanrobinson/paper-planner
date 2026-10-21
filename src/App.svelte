@@ -1,10 +1,11 @@
 <script>
-  let selected = $state({ daily: true, weekly: false, nextWeek: false, reminders: false });
+  let selected = $state({ weekly: false, reminders: false, nextWeek: false, daily: true });
   let exampleMode = $state('none');
   let printSide = $state('left');
 
   const SETUP_KEY = 'planner.dailySetup';
   const DAILY_ROWS = 11;
+  const TODO_ROWS = 5;
   const DAY_LETTERS = ['A', 'B', 'C', 'D'];
   const SPECIAL_TOKEN = '{special}';
   const loadSetup = () => {
@@ -32,31 +33,28 @@
   const baseRowCount = $derived(parseSchedule(setup.base).length);
 
   const pages = {
-    weekly: 'Current Week Overview',
-    nextWeek: 'Next Week Overview',
-    daily: 'Daily Schedule',
-    reminders: 'Reminders'
+    weekly: 'This Week',
+    reminders: 'Reminders',
+    nextWeek: 'Next Week',
+    daily: 'Daily Schedule'
   };
   const shown = $derived(Object.keys(pages).filter((key) => selected[key]));
 
-  // Weekly packet prints one-sided: the two week overviews, then a Daily Schedule and a
-  // Reminders page for each day. Every page is its own sheet.
+  // Two packets, both one-sided with every page on its own sheet. The Planning packet is
+  // the write-in pages that stay in a fixed order all week. The Daily packet is one page
+  // per day, with today's page on top.
+  const PLANNING_PAGES = ['weekly', 'reminders', 'nextWeek'];
   const PACKET_DAYS = ['Mon', 'Tue', 'Wed', 'Thur', 'Fri'];
+  const DAY_NAMES = { Mon: 'Monday', Tue: 'Tuesday', Wed: 'Wednesday', Thur: 'Thursday', Fri: 'Friday' };
   let mode = $state('sheets');
-  let packetWeekly = $state(true);
-  let packetNextWeek = $state(true);
+  let planningPages = $state(Object.fromEntries(PLANNING_PAGES.map((key) => [key, true])));
   let packetDays = $state(Object.fromEntries(PACKET_DAYS.map((d) => [d, true])));
   const sheets = $derived(
-    (mode === 'packet'
-      ? [
-          ...(packetWeekly ? [{ view: 'weekly' }] : []),
-          ...(packetNextWeek ? [{ view: 'nextWeek' }] : []),
-          ...PACKET_DAYS.filter((d) => packetDays[d]).flatMap((day) => [
-            { view: 'daily', day },
-            { view: 'reminders', day }
-          ])
-        ]
-      : shown.map((view) => ({ view }))
+    (mode === 'planning'
+      ? PLANNING_PAGES.filter((key) => planningPages[key]).map((view) => ({ view }))
+      : mode === 'daily'
+        ? PACKET_DAYS.filter((d) => packetDays[d]).map((day) => ({ view: 'daily', day }))
+        : shown.map((view) => ({ view }))
     ).map((sheet, i) => ({ ...sheet, id: `${i}-${sheet.view}` }))
   );
   const teacherExamples = {
@@ -87,16 +85,16 @@
         ['9:50–11:20', 'Reading and writing block'],
         ['11:50–12:30', 'Lunch and recess']
       ],
-      added: [['10:15', 'Office needs RSVP count'], ['1:10', 'Presentation filming']]
+      todo: [['', 'Collect Family Dinner slips'], ['10:15', 'Office needs RSVP count'], ['', 'Copy math centers'], ['1:10', 'Presentation filming']]
     },
     reminders: {
       date: 'Oct 19',
       rows: [
-        ['Check who still needs a Family Dinner RSVP slip', 'Monday'],
-        ['Log family calls in PowerSchool', 'After each call'],
-        ['Confirm science materials with teammate', 'Wednesday'],
-        ['Ask counselor about check-in request', 'This week'],
-        ['Check who missed i-Ready test', 'Thursday']
+        'Check who still needs a Family Dinner RSVP slip',
+        'Log family calls in PowerSchool',
+        'Confirm science materials with teammate',
+        'Ask counselor about check-in request',
+        'Check who missed i-Ready test'
       ]
     }
   };
@@ -128,16 +126,16 @@
         ['11:50', 'Lunch and recess'],
         ['12:30', 'Science']
       ],
-      added: [['9:30', 'Band'], ['1:30', 'Chorus'], ['2:00', 'Makeup test']]
+      todo: [['', 'Bring signed form to office'], ['9:30', 'Band'], ['', 'Return library book'], ['2:00', 'Makeup test']]
     },
     reminders: {
       date: 'Oct 19',
       rows: [
-        ['Bring my instrument for band', 'Monday'],
-        ['Sign and return the Family Dinner form', 'Tuesday'],
-        ['Return my library book', 'Wednesday'],
-        ['Finish my math page', 'Thursday'],
-        ['Practice my spelling words', 'Every night']
+        'Sign and return the Family Dinner form',
+        'Return my library book',
+        'Finish my math page',
+        'Ask Ms. Lee about band music',
+        'Practice my spelling words'
       ]
     }
   };
@@ -155,29 +153,29 @@
   <title>Paper Planner — Printable Sheets</title>
 </svelte:head>
 
-{#snippet nameDate(key)}
+{#snippet nameDate(key, dateLabel = 'Date')}
   <div class="name-date">
     <div class="field"><b>Name:</b><span class="ex">{exampleMode === 'none' ? '' : exampleNames[exampleMode]}</span></div>
-    <div class="field"><b>Date:</b><span class="ex">{current ? current[key].date : ''}</span></div>
+    <div class="field"><b>{dateLabel}:</b><span class="ex">{current ? current[key].date : ''}</span></div>
   </div>
 {/snippet}
 
-{#snippet circleStrip(showLetters = false)}
+{#snippet circleStrip(showDays = true)}
   <div class="circle-strip">
-    <div class="circle-group" aria-label="Circle the day of the week">
-      <b>Day:</b>
-      {#each ['Mon', 'Tue', 'Wed', 'Thur', 'Fri'] as day}
-        <span class="day" class:circled={current && current.daily.date.startsWith(day.slice(0, 3))}>{day}</span>
-      {/each}
-    </div>
-    {#if showLetters}
-      <div class="circle-group" aria-label="Circle the letter day">
-        <b>Letter day:</b>
-        {#each DAY_LETTERS as letter}
-          <span class="day" class:circled={current && letter === 'A'}>{letter}</span>
+    {#if showDays}
+      <div class="circle-group" aria-label="Circle the day of the week">
+        <b>Day:</b>
+        {#each PACKET_DAYS as day}
+          <span class="day" class:circled={current && current.daily.date.startsWith(day.slice(0, 3))}>{day}</span>
         {/each}
       </div>
     {/if}
+    <div class="circle-group" aria-label="Circle the letter day">
+      <b>Letter day:</b>
+      {#each DAY_LETTERS as letter}
+        <span class="day" class:circled={current && letter === 'A'}>{letter}</span>
+      {/each}
+    </div>
   </div>
 {/snippet}
 
@@ -228,26 +226,30 @@
   <div class="workspace">
     <aside class="sidebar" aria-label="Sheets to print">
       <div class="mode-toggle" role="radiogroup" aria-label="What to print">
+        <label class:active={mode === 'planning'}><input type="radio" name="mode" value="planning" bind:group={mode} />Planning packet</label>
+        <label class:active={mode === 'daily'}><input type="radio" name="mode" value="daily" bind:group={mode} />Daily packet</label>
         <label class:active={mode === 'sheets'}><input type="radio" name="mode" value="sheets" bind:group={mode} />Single sheets</label>
-        <label class:active={mode === 'packet'}><input type="radio" name="mode" value="packet" bind:group={mode} />Weekly packet</label>
       </div>
-      {#if mode === 'packet'}
-        <label class="sheet-choice"><input type="checkbox" bind:checked={packetWeekly} />Current Week Overview</label>
-        <label class="sheet-choice"><input type="checkbox" bind:checked={packetNextWeek} />Next Week Overview</label>
+      {#if mode === 'planning'}
+        {#each PLANNING_PAGES as key}
+          <label class="sheet-choice"><input type="checkbox" bind:checked={planningPages[key]} />{pages[key]}</label>
+        {/each}
+        <p class="sidebar-note packet-note">{sheets.length} {sheets.length === 1 ? 'page' : 'pages'}, one-sided. These stay in the binder in this order all week. Write down anything that has a day on This Week or Next Week, and anything without a day on Reminders.</p>
+      {:else if mode === 'daily'}
         <p class="side-label">Days</p>
         <div class="print-days">
           {#each PACKET_DAYS as d}
             <label><input type="checkbox" bind:checked={packetDays[d]} />{d}</label>
           {/each}
         </div>
-        <p class="sidebar-note packet-note">{sheets.length} {sheets.length === 1 ? 'page' : 'pages'}, one-sided. Each day prints a Daily Schedule page and a Reminders page.</p>
+        <p class="sidebar-note packet-note">{sheets.length} {sheets.length === 1 ? 'page' : 'pages'}, one-sided. Clip them together with today on top. At dismissal, move anything not finished to Reminders and take the page off.</p>
       {:else}
-        <p class="side-label">Sheets To Print</p>
+        <p class="side-label">Sheets to print</p>
         {#each Object.entries(pages) as [key, label]}
           <label class="sheet-choice"><input type="checkbox" bind:checked={selected[key]} />{label}</label>
         {/each}
       {/if}
-      {#if selected.daily || mode === 'packet'}
+      {#if mode === 'daily' || (mode === 'sheets' && selected.daily)}
         <div class="schedule-input">
           <label class="side-label" for="base-schedule">Daily schedule</label>
           <textarea id="base-schedule" rows="9" placeholder={"7:30–7:50, Arrival\n7:50–9:20, Math block\n12:30–1:05, {special}"} bind:value={setup.base} onblur={saveSetup} spellcheck="false"></textarea>
@@ -275,8 +277,11 @@
       {@const view = sheet.view}
       <section class="sheet" aria-label={`${sheet.day ? sheet.day + ' ' : ''}${pages[view]}`}>
         {#if view === 'daily'}
-          <div class="sheet-header title-row"><h2>Daily Schedule</h2>{@render nameDate('daily')}</div>
-          {@render circleStrip(true)}
+          <div class="sheet-header title-row">
+            {#if sheet.day}<h2>{DAY_NAMES[sheet.day]}<small>Daily Schedule</small></h2>{:else}<h2>Daily Schedule</h2>{/if}
+            {@render nameDate('daily')}
+          </div>
+          {@render circleStrip(!sheet.day)}
           <div class="table-wrap daily-table">
             <div class="table-head"><span></span><span>Time</span><span>Activity</span></div>
             {#each rows(DAILY_ROWS) as _, i}
@@ -295,21 +300,20 @@
               </div>
             {/each}
           </div>
-          <div class="table-wrap daily-table added-table">
-            <div class="table-head"><span></span><span>Time</span><span>Additional Activity</span></div>
-            {#each rows(4) as _, i}
-              <div class="table-row daily-row"><span class="empty-check"></span><span class="ex">{example('daily', 'added')[i]?.[0] ?? ''}</span><span class="ex">{example('daily', 'added')[i]?.[1] ?? ''}</span></div>
+          <div class="table-wrap daily-table todo-table">
+            <div class="table-head"><span></span><span>Time</span><span>Today I need to</span></div>
+            {#each rows(TODO_ROWS) as _, i}
+              <div class="table-row daily-row"><span class="empty-check"></span><span class="ex">{example('daily', 'todo')[i]?.[0] ?? ''}</span><span class="ex">{example('daily', 'todo')[i]?.[1] ?? ''}</span></div>
             {/each}
           </div>
         {:else if view === 'weekly' || view === 'nextWeek'}
           {@render weekSheet(view)}
         {:else}
-          <div class="sheet-header title-row"><h2>Reminders</h2>{@render nameDate('reminders')}</div>
-          {@render circleStrip()}
+          <div class="sheet-header title-row"><h2>Reminders</h2>{@render nameDate('reminders', 'Week of')}</div>
           <div class="table-wrap reminders-table">
-            <div class="table-head"><span></span><span>Reminder</span><span>When</span></div>
+            <div class="table-head"><span></span><span>Not done yet, or no day</span></div>
             {#each rows(16) as _, i}
-              <div class="table-row reminder-row"><span class="empty-check"></span><span class="ex">{example('reminders')[i]?.[0] ?? ''}</span><span class="ex">{example('reminders')[i]?.[1] ?? ''}</span></div>
+              <div class="table-row reminder-row"><span class="empty-check"></span><span class="ex">{example('reminders')[i] ?? ''}</span></div>
             {/each}
           </div>
         {/if}

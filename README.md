@@ -2,10 +2,10 @@
 
 Simple printable planner sheets for teachers and students, built with **Svelte, HTML, and CSS**. Teachers and students use the same sheets.
 
-- **Current Week Overview:** a checklist for each day of this week.
-- **Next Week Overview:** the same layout for next week, so upcoming events show up early.
-- **Daily Schedule:** time blocks and activities, with circles for the day of the week and the letter day.
-- **Reminders:** one running checklist with a When column.
+- **This Week:** a checklist for each day of this week.
+- **Reminders:** one running checklist for things that are not finished or have no day.
+- **Next Week:** the same layout as This Week, so students can write down upcoming events the moment they come up.
+- **Daily Schedule:** time blocks and activities, with circles for the letter day and a Today I need to block for the day's tasks.
 
 ## Run locally
 
@@ -26,8 +26,9 @@ Deploy the `dist` folder to any static host. The repo deploys to GitHub Pages au
 
 ## How to use
 
-- Choose **Weekly packet** or **Single sheets**.
-- The weekly packet prints one-sided: the Current Week Overview, the Next Week Overview, then a Daily Schedule page and a Reminders page for each day.
+- Choose **Planning packet**, **Daily packet**, or **Single sheets**.
+- The Planning packet prints This Week, Reminders and Next Week. These stay in the binder in that order all week.
+- The Daily packet prints one Daily Schedule page for each day, with the day name on the page. Clip them together with today on top. At dismissal, move anything not finished to Reminders and take the page off.
 - Use **Single sheets** to reprint one page.
 - Enter the daily schedule and the special for each letter day in the sidebar.
 - Choose **Left edge** or **Right edge** to leave more room for the hole punch on that side.
