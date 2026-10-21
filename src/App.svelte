@@ -311,7 +311,6 @@
         {:else}
           <div class="sheet-header title-row"><h2>Reminders</h2>{@render nameDate('reminders', 'Week of')}</div>
           <div class="table-wrap reminders-table">
-            <div class="table-head"><span></span><span>Not done yet, or no day</span></div>
             {#each rows(16) as _, i}
               <div class="table-row reminder-row"><span class="empty-check"></span><span class="ex">{example('reminders')[i] ?? ''}</span></div>
             {/each}
